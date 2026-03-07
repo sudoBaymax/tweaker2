@@ -7,7 +7,7 @@ import { MAP_CENTER, MAP_ZOOM, SafetyPoint, timeDecay } from "@/data/safetyData"
 interface MapViewProps {
   onMapReady?: () => void;
   incidents: SafetyPoint[];
-  timeOffset: number; // hours offset from now (negative = past)
+  timeOffset: number;
 }
 
 declare module "leaflet" {
@@ -54,7 +54,6 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
     };
   }, []);
 
-  // Update heatmap
   useEffect(() => {
     if (!map.current || !mapReady) return;
 
@@ -62,34 +61,34 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
       map.current.removeLayer(heatLayer.current);
     }
 
-    // The "viewpoint" time — if slider is at -6, we look at 6 hours ago
     const viewTime = Date.now() + timeOffset * 60 * 60 * 1000;
-
-    // Filter incidents within 24h window of viewTime and apply decay
     const heatData: Array<[number, number, number]> = [];
+
     for (const p of incidents) {
       const age = viewTime - p.timestamp;
       if (age < 0 || age > 24 * 60 * 60 * 1000) continue;
       const decay = timeDecay(p.timestamp, viewTime);
       const intensity = p.risk * decay;
-      if (intensity > 0.02) {
+      if (intensity > 0.01) {
         heatData.push([p.lat, p.lng, intensity]);
       }
     }
 
     heatLayer.current = (L as any).heatLayer(heatData, {
-      radius: 35,
-      blur: 22,
+      radius: 40,
+      blur: 32,
       maxZoom: 17,
       max: 1.0,
-      minOpacity: 0.08,
+      minOpacity: 0.05,
       gradient: {
         0.0: "rgba(0,0,0,0)",
-        0.15: "rgba(0,0,0,0)",
-        0.35: "#ffd400",
-        0.55: "#ff8800",
-        0.75: "#ff3b3b",
-        1.0: "#ff0000",
+        0.1: "#00221c",
+        0.25: "#00ff9c",
+        0.45: "#7dff5c",
+        0.6: "#ffe600",
+        0.75: "#ff8c00",
+        0.9: "#ff2a2a",
+        1.0: "#7a0000",
       },
     }).addTo(map.current);
   }, [incidents, mapReady, timeOffset]);
