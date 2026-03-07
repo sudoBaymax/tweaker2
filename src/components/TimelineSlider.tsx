@@ -3,7 +3,7 @@ import { Clock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 interface TimelineSliderProps {
-  value: number; // 0 to 24 (hours from now, negative = past)
+  value: number;
   onChange: (value: number) => void;
 }
 
@@ -12,7 +12,7 @@ function formatLabel(hoursOffset: number): string {
   const h = date.getHours();
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 || 12;
-  if (hoursOffset === 0) return "Now";
+  if (hoursOffset === 0) return "NOW";
   return `${h12}${ampm}`;
 }
 
@@ -21,16 +21,16 @@ const TimelineSlider = ({ value, onChange }: TimelineSliderProps) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6 }}
-      className="glass rounded-xl px-4 py-3"
+      transition={{ delay: 0.2 }}
+      className="glass px-4 py-3"
     >
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Timeline</span>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-primary" />
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
         </div>
-        <span className="text-xs font-mono text-primary">
-          {value === 0 ? "Live" : formatLabel(value)}
+        <span className="text-sm font-mono font-bold text-primary uppercase">
+          {value === 0 ? "LIVE" : formatLabel(value)}
         </span>
       </div>
       <Slider
@@ -42,8 +42,8 @@ const TimelineSlider = ({ value, onChange }: TimelineSliderProps) => {
         className="w-full"
       />
       <div className="flex justify-between mt-1">
-        <span className="text-[9px] text-muted-foreground">24h ago</span>
-        <span className="text-[9px] text-primary font-medium">Now</span>
+        <span className="text-xs text-muted-foreground font-bold uppercase">24H AGO</span>
+        <span className="text-xs text-primary font-bold uppercase">NOW</span>
       </div>
     </motion.div>
   );

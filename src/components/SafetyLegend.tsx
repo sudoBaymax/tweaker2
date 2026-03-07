@@ -5,20 +5,20 @@ const SafetyLegend = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 0.8 }}
-      className="flex items-center gap-3 glass rounded-lg px-3 py-2"
+      transition={{ delay: 0.3 }}
+      className="flex items-center gap-4 glass px-4 py-2"
     >
-      <div className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-safe shadow-[var(--glow-safe)]" />
-        <span className="text-[10px] text-muted-foreground">Safe</span>
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-safe" />
+        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Safe</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-warning shadow-[var(--glow-warning)]" />
-        <span className="text-[10px] text-muted-foreground">Caution</span>
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-warning" />
+        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Caution</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-danger shadow-[var(--glow-danger)]" />
-        <span className="text-[10px] text-muted-foreground">Risky</span>
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-danger" />
+        <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Risky</span>
       </div>
     </motion.div>
   );
