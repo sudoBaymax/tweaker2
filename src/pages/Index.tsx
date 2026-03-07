@@ -6,21 +6,36 @@ import RouteCard from "@/components/RouteCard";
 import ReportModal from "@/components/ReportModal";
 import AlertToast from "@/components/AlertToast";
 import SafetyLegend from "@/components/SafetyLegend";
-import { generateRandomReport, SafetyPoint } from "@/data/safetyData";
+import TimelineSlider from "@/components/TimelineSlider";
+import { generateHistoricalIncidents, generateLiveIncident, generateUserReport, SafetyPoint } from "@/data/safetyData";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 
 const Index = () => {
   const [showRoutes, setShowRoutes] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [newReports, setNewReports] = useState<SafetyPoint[]>([]);
+  const [incidents, setIncidents] = useState<SafetyPoint[]>([]);
   const [toast, setToast] = useState({ visible: false, message: "" });
+  const [timeOffset, setTimeOffset] = useState(0);
 
-  // "Alive map" — add random reports every 5 seconds
+  // Generate historical data on mount
+  useEffect(() => {
+    setIncidents(generateHistoricalIncidents());
+  }, []);
+
+  // Live: add new incidents & prune old ones every 7 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setNewReports((prev) => [...prev, generateRandomReport()]);
-    }, 5000);
+      setIncidents((prev) => {
+        const now = Date.now();
+        const cutoff = now - 24 * 60 * 60 * 1000;
+        // Add 1-2 new incidents
+        const newCount = Math.random() < 0.4 ? 2 : 1;
+        const newIncidents = Array.from({ length: newCount }, () => generateLiveIncident());
+        // Prune old
+        return [...prev.filter((p) => p.timestamp > cutoff), ...newIncidents];
+      });
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
 
@@ -29,10 +44,8 @@ const Index = () => {
   }, []);
 
   const handleReport = useCallback((category: string) => {
-    const report = generateRandomReport();
-    report.category = category;
-    report.risk = 0.85 + Math.random() * 0.15; // High risk for user reports
-    setNewReports((prev) => [...prev, report]);
+    const report = generateUserReport(category);
+    setIncidents((prev) => [...prev, report]);
     setToast({ visible: true, message: "Report submitted — heatmap updated" });
     setTimeout(() => setToast({ visible: false, message: "" }), 3000);
   }, []);
@@ -48,33 +61,38 @@ const Index = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background">
-      {/* Map */}
-      <MapView newReports={newReports} />
-
-      {/* Header */}
+      <MapView incidents={incidents} timeOffset={timeOffset} />
       <Header />
-
-      {/* Toast */}
       <AlertToast visible={toast.visible} message={toast.message} />
+
+      {/* Demo mode badge */}
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="glass rounded-full px-3 py-1 text-[9px] text-muted-foreground font-mono tracking-wider"
+        >
+          Demo mode — simulated safety signals
+        </motion.div>
+      </div>
 
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 z-20 p-4 flex flex-col gap-3 max-w-lg mx-auto">
-        {/* Legend */}
         <div className="flex justify-center">
           <SafetyLegend />
         </div>
 
-        {/* Search */}
+        <TimelineSlider value={timeOffset} onChange={setTimeOffset} />
+
         <SearchBar onSearch={handleSearch} />
 
-        {/* Route Comparison */}
         <RouteCard
           visible={showRoutes}
           onClose={() => setShowRoutes(false)}
           onSelectRoute={handleSelectRoute}
         />
 
-        {/* Action Buttons */}
         {!showRoutes && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -93,7 +111,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Report Modal */}
       <ReportModal
         open={reportOpen}
         onClose={() => setReportOpen(false)}
