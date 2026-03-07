@@ -1,4 +1,3 @@
-import L from "leaflet";
 import { SafetyPoint, getTimeAdjustedRisk, HOTSPOTS_PUBLIC } from "@/data/safetyData";
 
 export interface RouteResult {
@@ -9,20 +8,6 @@ export interface RouteResult {
 }
 
 const WALK_SPEED_KMH = 5;
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
 
 /** Sample risk at a point from nearby incidents */
 function sampleRisk(lat: number, lng: number, incidents: SafetyPoint[], viewHour: number): number {
@@ -42,125 +27,173 @@ function sampleRisk(lat: number, lng: number, incidents: SafetyPoint[], viewHour
   return totalWeight > 0 ? Math.min(1, totalRisk / totalWeight) : 0;
 }
 
-/** Generate the direct (fastest) route as a series of interpolated points */
-function generateDirectRoute(
-  startLat: number, startLng: number,
-  endLat: number, endLng: number,
-  steps: number
-): [number, number][] {
-  const points: [number, number][] = [];
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    // Add slight natural curve
-    const jitterLat = (Math.random() - 0.5) * 0.0003;
-    const jitterLng = (Math.random() - 0.5) * 0.0003;
-    points.push([
-      lerp(startLat, endLat, t) + (i > 0 && i < steps ? jitterLat : 0),
-      lerp(startLng, endLng, t) + (i > 0 && i < steps ? jitterLng : 0),
-    ]);
-  }
-  return points;
-}
-
-/** Generate a route that curves away from high-crime areas */
-function generateSafeRoute(
-  startLat: number, startLng: number,
-  endLat: number, endLng: number,
-  incidents: SafetyPoint[],
-  viewHour: number,
-  steps: number
-): [number, number][] {
-  // Start with the direct route
-  const points = generateDirectRoute(startLat, startLng, endLat, endLng, steps);
-  const hotspots = HOTSPOTS_PUBLIC;
-
-  // Push waypoints away from hotspots iteratively
-  for (let iter = 0; iter < 3; iter++) {
-    for (let i = 1; i < points.length - 1; i++) {
-      let pushLat = 0;
-      let pushLng = 0;
-
-      for (const hs of hotspots) {
-        const dLat = points[i][0] - hs.lat;
-        const dLng = points[i][1] - hs.lng;
-        const dist = Math.sqrt(dLat ** 2 + dLng ** 2);
-        const dangerRadius = hs.spread * 3;
-
-        if (dist < dangerRadius && dist > 0.0001) {
-          const force = ((dangerRadius - dist) / dangerRadius) * 0.002 * (hs.count / 120);
-          pushLat += (dLat / dist) * force;
-          pushLng += (dLng / dist) * force;
-        }
-      }
-
-      // Also check incident density
-      const risk = sampleRisk(points[i][0], points[i][1], incidents, viewHour);
-      if (risk > 0.3) {
-        // Push perpendicular to route direction
-        const dx = endLat - startLat;
-        const dy = endLng - startLng;
-        const perpLat = -dy;
-        const perpLng = dx;
-        const mag = Math.sqrt(perpLat ** 2 + perpLng ** 2) || 1;
-        pushLat += (perpLat / mag) * risk * 0.001;
-        pushLng += (perpLng / mag) * risk * 0.001;
-      }
-
-      points[i] = [points[i][0] + pushLat, points[i][1] + pushLng];
-    }
-  }
-
-  return points;
-}
-
-function routeDistance(points: [number, number][]): number {
-  let total = 0;
-  for (let i = 1; i < points.length; i++) {
-    total += haversineKm(points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
-  }
-  return total;
-}
-
 function routeRiskScore(
   points: [number, number][],
   incidents: SafetyPoint[],
   viewHour: number
 ): number {
+  if (points.length === 0) return 0;
+  // Sample every few points to keep it fast
+  const step = Math.max(1, Math.floor(points.length / 40));
   let totalRisk = 0;
-  for (const [lat, lng] of points) {
-    totalRisk += sampleRisk(lat, lng, incidents, viewHour);
+  let count = 0;
+  for (let i = 0; i < points.length; i += step) {
+    totalRisk += sampleRisk(points[i][0], points[i][1], incidents, viewHour);
+    count++;
   }
-  return totalRisk / points.length;
+  return totalRisk / count;
 }
 
-export function calculateRoutes(
+/** Call OSRM demo server for a walking route */
+async function fetchOSRMRoute(
+  coords: [number, number][] // [lat, lng] pairs
+): Promise<{ waypoints: [number, number][]; distanceKm: number; durationMin: number } | null> {
+  // OSRM expects lng,lat order
+  const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(";");
+  const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=geojson&steps=false`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code !== "Ok" || !data.routes?.[0]) return null;
+
+    const route = data.routes[0];
+    // GeoJSON coords are [lng, lat] — flip to [lat, lng]
+    const waypoints: [number, number][] = route.geometry.coordinates.map(
+      ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+    );
+
+    return {
+      waypoints,
+      distanceKm: route.distance / 1000,
+      durationMin: Math.round(route.duration / 60),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Generate avoidance waypoints that steer around crime hotspots */
+function generateAvoidanceWaypoints(
+  startLat: number, startLng: number,
+  endLat: number, endLng: number,
+  _incidents: SafetyPoint[],
+  _viewHour: number
+): [number, number][] {
+  const hotspots = HOTSPOTS_PUBLIC;
+  const midLat = (startLat + endLat) / 2;
+  const midLng = (startLng + endLng) / 2;
+
+  // Route direction vector
+  const dx = endLat - startLat;
+  const dy = endLng - startLng;
+  const routeLen = Math.sqrt(dx ** 2 + dy ** 2);
+  if (routeLen < 0.001) return []; // too short
+
+  // Perpendicular vector (normalized)
+  const perpLat = -dy / routeLen;
+  const perpLng = dx / routeLen;
+
+  // Check which hotspots are near the direct path
+  let totalPush = 0;
+  let pushCount = 0;
+
+  for (const hs of hotspots) {
+    // Project hotspot onto route line to see if it's "in the way"
+    const toHsLat = hs.lat - startLat;
+    const toHsLng = hs.lng - startLng;
+    const projection = (toHsLat * dx + toHsLng * dy) / (routeLen ** 2);
+
+    if (projection > 0.05 && projection < 0.95) {
+      // Distance from hotspot to route line
+      const closestLat = startLat + dx * projection;
+      const closestLng = startLng + dy * projection;
+      const distToRoute = Math.sqrt((hs.lat - closestLat) ** 2 + (hs.lng - closestLng) ** 2);
+
+      const dangerRadius = hs.spread * 4;
+      if (distToRoute < dangerRadius) {
+        // Determine which side to push to (away from hotspot)
+        const sideSign = ((hs.lat - closestLat) * perpLat + (hs.lng - closestLng) * perpLng) > 0 ? -1 : 1;
+        const force = (1 - distToRoute / dangerRadius) * (hs.count / 80) * sideSign;
+        totalPush += force;
+        pushCount++;
+      }
+    }
+  }
+
+  if (pushCount === 0) return []; // No hotspots near route, no detour needed
+
+  // Calculate offset magnitude
+  const avgPush = totalPush / pushCount;
+  const offsetMagnitude = Math.min(0.008, Math.abs(avgPush) * 0.003); // Cap the detour
+  const sign = avgPush >= 0 ? 1 : -1;
+
+  // Create 1-2 intermediate waypoints offset from the direct path
+  const wp1: [number, number] = [
+    midLat + perpLat * offsetMagnitude * sign,
+    midLng + perpLng * offsetMagnitude * sign,
+  ];
+
+  return [wp1];
+}
+
+export async function calculateRoutes(
   startLat: number, startLng: number,
   endLat: number, endLng: number,
   incidents: SafetyPoint[],
   viewHour: number
-): { fastest: RouteResult; safest: RouteResult } {
-  const steps = 20;
+): Promise<{ fastest: RouteResult; safest: RouteResult }> {
+  // Build waypoint lists
+  const directCoords: [number, number][] = [[startLat, startLng], [endLat, endLng]];
+  const avoidanceWps = generateAvoidanceWaypoints(startLat, startLng, endLat, endLng, incidents, viewHour);
+  const safeCoords: [number, number][] = [[startLat, startLng], ...avoidanceWps, [endLat, endLng]];
 
-  const fastPoints = generateDirectRoute(startLat, startLng, endLat, endLng, steps);
-  const safePoints = generateSafeRoute(startLat, startLng, endLat, endLng, incidents, viewHour, steps);
+  // Fetch both routes in parallel
+  const [fastResult, safeResult] = await Promise.all([
+    fetchOSRMRoute(directCoords),
+    fetchOSRMRoute(safeCoords),
+  ]);
 
-  const fastDist = routeDistance(fastPoints);
-  const safeDist = routeDistance(safePoints);
-
-  return {
-    fastest: {
-      waypoints: fastPoints,
-      distanceKm: fastDist,
-      walkMinutes: Math.round((fastDist / WALK_SPEED_KMH) * 60),
-      riskScore: routeRiskScore(fastPoints, incidents, viewHour),
-    },
-    safest: {
-      waypoints: safePoints,
-      distanceKm: safeDist,
-      walkMinutes: Math.round((safeDist / WALK_SPEED_KMH) * 60),
-      riskScore: routeRiskScore(safePoints, incidents, viewHour),
-    },
+  const makeFallback = (coords: [number, number][]): RouteResult => {
+    const dist = haversineKm(coords[0][0], coords[0][1], coords[coords.length - 1][0], coords[coords.length - 1][1]);
+    return {
+      waypoints: coords,
+      distanceKm: dist,
+      walkMinutes: Math.round((dist / WALK_SPEED_KMH) * 60),
+      riskScore: routeRiskScore(coords, incidents, viewHour),
+    };
   };
+
+  const fastest: RouteResult = fastResult
+    ? {
+        waypoints: fastResult.waypoints,
+        distanceKm: fastResult.distanceKm,
+        walkMinutes: fastResult.durationMin,
+        riskScore: routeRiskScore(fastResult.waypoints, incidents, viewHour),
+      }
+    : makeFallback(directCoords);
+
+  const safest: RouteResult = safeResult
+    ? {
+        waypoints: safeResult.waypoints,
+        distanceKm: safeResult.distanceKm,
+        walkMinutes: safeResult.durationMin,
+        riskScore: routeRiskScore(safeResult.waypoints, incidents, viewHour),
+      }
+    : makeFallback(safeCoords);
+
+  return { fastest, safest };
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 /** Known destination locations for demo */
@@ -200,6 +233,5 @@ export function resolveDestination(query: string): [number, number] | null {
   for (const [name, coords] of Object.entries(KNOWN_DESTINATIONS)) {
     if (q.includes(name) || name.includes(q)) return coords;
   }
-  // Fallback: random point in tri-city area
-  return [43.4200 + (Math.random() - 0.5) * 0.06, -80.4500 + (Math.random() - 0.5) * 0.08];
+  return null;
 }
