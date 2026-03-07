@@ -229,14 +229,18 @@ export function generateLiveIncident(): SafetyPoint {
   };
 }
 
-export function generateUserReport(category: string, intensity: number = 0.85, lat?: number, lng?: number): SafetyPoint {
-  return {
-    lat: (lat ?? 43.4723) + gaussRandom() * 0.001,
-    lng: (lng ?? -80.5449) + gaussRandom() * 0.001,
-    risk: Math.min(1, intensity + Math.random() * 0.1),
+export function generateUserReport(category: string, intensity: number = 0.85, lat?: number, lng?: number): SafetyPoint[] {
+  const centerLat = lat ?? 43.4723;
+  const centerLng = lng ?? -80.5449;
+  const now = Date.now();
+  // Generate a small cluster so it appears as a visible zone
+  return Array.from({ length: 5 }, () => ({
+    lat: centerLat + gaussRandom() * 0.0003,
+    lng: centerLng + gaussRandom() * 0.0003,
+    risk: Math.min(1, intensity + Math.random() * 0.05),
     category,
-    timestamp: Date.now(),
-  };
+    timestamp: now,
+  }));
 }
 
 // Center on Kitchener-Waterloo-Cambridge tri-city region
