@@ -44,7 +44,6 @@ const HOTSPOTS = [
   { name: "University Plaza Lot", lat: 43.4740, lng: -80.5370, count: 20, spread: 0.0015 },
 ];
 
-// Background noise spread across the whole area
 const BG_CENTER = { lat: 43.465, lng: -80.520 };
 const BG_COUNT = 60;
 const BG_SPREAD = 0.025;
@@ -70,7 +69,7 @@ export function crimeMultiplier(hour: number): number {
   if (hour >= 18) return 1.8;
   if (hour >= 12) return 1.2;
   if (hour >= 6) return 0.5;
-  return 1.4; // 2am-6am moderate decline
+  return 1.4;
 }
 
 function weekendMultiplier(date: Date): number {
@@ -81,6 +80,13 @@ function weekendMultiplier(date: Date): number {
   if (day === 6 && hour >= 22) return 1.4;
   if (day === 0 && hour <= 2) return 1.3;
   return 1.0;
+}
+
+/** Instead of hiding points, scale risk by the viewed hour's crime pattern */
+export function getTimeAdjustedRisk(point: SafetyPoint, viewHour: number): number {
+  const viewMult = crimeMultiplier(viewHour);
+  // Normalize against max multiplier (2.8) so risk stays 0-1
+  return point.risk * (viewMult / 2.8);
 }
 
 export function timeDecay(eventTimestamp: number, now: number): number {
@@ -103,24 +109,21 @@ function generateClusterPoints(
   const hoursBack = 24;
 
   for (let i = 0; i < count; i++) {
-    // Distribute timestamps across 24 hours with time-of-day weighting
-    // Use rejection sampling for realistic temporal distribution
-    let timestamp: number;
+    let timestamp: number = now;
     let accepted = false;
     while (!accepted) {
       const hoursAgo = Math.random() * hoursBack;
       timestamp = now - hoursAgo * 60 * 60 * 1000;
-      const date = new Date(timestamp!);
+      const date = new Date(timestamp);
       const hour = date.getHours();
       const mult = crimeMultiplier(hour) * weekendMultiplier(date);
-      // Accept with probability proportional to multiplier (max ~4.5)
       if (Math.random() < mult / 4.5) {
         accepted = true;
       }
     }
 
     const { type, severity } = pickIncidentType();
-    const date = new Date(timestamp!);
+    const date = new Date(timestamp);
     const hour = date.getHours();
     const nightBoost = (hour >= 22 || hour <= 4) ? 0.12 : 0;
 
@@ -129,7 +132,7 @@ function generateClusterPoints(
       lng: centerLng + gaussRandom() * spread,
       risk: Math.min(1, severity[0] + Math.random() * (severity[1] - severity[0]) + nightBoost),
       type,
-      timestamp: timestamp!,
+      timestamp,
     });
   }
 
@@ -140,12 +143,10 @@ export function generateHistoricalIncidents(): SafetyPoint[] {
   const now = Date.now();
   const allPoints: SafetyPoint[] = [];
 
-  // Cluster points
   for (const hs of HOTSPOTS) {
     allPoints.push(...generateClusterPoints(hs.lat, hs.lng, hs.count, hs.spread, now));
   }
 
-  // Background noise
   allPoints.push(...generateClusterPoints(BG_CENTER.lat, BG_CENTER.lng, BG_COUNT, BG_SPREAD, now));
 
   return allPoints;
@@ -156,7 +157,6 @@ export function generateLiveIncident(): SafetyPoint {
   const hour = new Date(now).getHours();
   const mult = crimeMultiplier(hour);
 
-  // Pick hotspot weighted by count * multiplier
   const weights = HOTSPOTS.map((h) => h.count * mult);
   const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;

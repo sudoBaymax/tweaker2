@@ -18,19 +18,16 @@ const Index = () => {
   const [toast, setToast] = useState({ visible: false, message: "" });
   const [timeOffset, setTimeOffset] = useState(0);
 
-  // Generate historical data on mount
   useEffect(() => {
     setIncidents(generateHistoricalIncidents());
   }, []);
 
-  // Live: add new incidents & prune old ones every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setIncidents((prev) => {
         const now = Date.now();
         const cutoff = now - 24 * 60 * 60 * 1000;
-        // Add 2-4 new incidents
-        const newCount = 2 + Math.floor(Math.random() * 3); // 2-4
+        const newCount = 2 + Math.floor(Math.random() * 3);
         const newIncidents = Array.from({ length: newCount }, () => generateLiveIncident());
         return [...prev.filter((p) => p.timestamp > cutoff), ...newIncidents];
       });
@@ -38,21 +35,21 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback((from: string, to: string) => {
     setShowRoutes(true);
   }, []);
 
   const handleReport = useCallback((category: string) => {
     const report = generateUserReport(category);
     setIncidents((prev) => [...prev, report]);
-    setToast({ visible: true, message: "Report submitted — heatmap updated" });
+    setToast({ visible: true, message: "REPORT SUBMITTED — HEATMAP UPDATED" });
     setTimeout(() => setToast({ visible: false, message: "" }), 3000);
   }, []);
 
   const handleSelectRoute = useCallback((type: "fastest" | "safest") => {
     setToast({
       visible: true,
-      message: type === "safest" ? "Navigating via safest route ✓" : "Navigating via fastest route",
+      message: type === "safest" ? "NAVIGATING VIA SAFEST ROUTE ✓" : "NAVIGATING VIA FASTEST ROUTE",
     });
     setShowRoutes(false);
     setTimeout(() => setToast({ visible: false, message: "" }), 3000);
@@ -69,10 +66,10 @@ const Index = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="glass rounded-full px-3 py-1 text-[9px] text-muted-foreground font-mono tracking-wider"
+          transition={{ delay: 0.5 }}
+          className="glass px-4 py-2 text-xs text-muted-foreground font-mono tracking-widest uppercase"
         >
-          Demo mode — simulated safety signals
+          DEMO MODE — SIMULATED SAFETY SIGNALS
         </motion.div>
       </div>
 
@@ -96,15 +93,15 @@ const Index = () => {
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.2 }}
             className="flex gap-2"
           >
             <button
               onClick={() => setReportOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 glass rounded-xl py-3 text-sm font-medium text-danger hover:bg-danger/10 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 glass py-3 text-base font-bold text-danger uppercase tracking-wider hover:bg-danger/10 transition-colors"
             >
-              <AlertTriangle className="w-4 h-4" />
-              Report Issue
+              <AlertTriangle className="w-5 h-5" />
+              REPORT ISSUE
             </button>
           </motion.div>
         )}

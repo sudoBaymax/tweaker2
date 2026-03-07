@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
-import { MAP_CENTER, MAP_ZOOM, SafetyPoint, timeDecay } from "@/data/safetyData";
+import { MAP_CENTER, MAP_ZOOM, SafetyPoint, getTimeAdjustedRisk } from "@/data/safetyData";
 
 interface MapViewProps {
   onMapReady?: () => void;
@@ -61,14 +61,15 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
       map.current.removeLayer(heatLayer.current);
     }
 
-    const viewTime = Date.now() + timeOffset * 60 * 60 * 1000;
+    // Calculate the viewed hour from the offset
+    const viewDate = new Date(Date.now() + timeOffset * 60 * 60 * 1000);
+    const viewHour = viewDate.getHours();
+
     const heatData: Array<[number, number, number]> = [];
 
     for (const p of incidents) {
-      const age = viewTime - p.timestamp;
-      if (age < 0 || age > 24 * 60 * 60 * 1000) continue;
-      const decay = timeDecay(p.timestamp, viewTime);
-      const intensity = p.risk * decay;
+      // All points stay visible — intensity shifts with viewed hour
+      const intensity = getTimeAdjustedRisk(p, viewHour);
       if (intensity > 0.01) {
         heatData.push([p.lat, p.lng, intensity]);
       }

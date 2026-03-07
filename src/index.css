@@ -9,10 +9,10 @@
     --background: 0 0% 4.3%;
     --foreground: 0 0% 100%;
 
-    --card: 0 0% 7%;
+    --card: 0 0% 5%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 7%;
+    --popover: 0 0% 5%;
     --popover-foreground: 0 0% 100%;
 
     --primary: 157 100% 50%;
@@ -30,27 +30,27 @@
     --destructive: 0 77% 62%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 157 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0;
 
     --safe: 157 100% 50%;
     --warning: 50 100% 50%;
     --danger: 0 77% 62%;
 
-    --glow-safe: 0 0 20px hsl(157 100% 50% / 0.4);
-    --glow-warning: 0 0 20px hsl(50 100% 50% / 0.4);
-    --glow-danger: 0 0 20px hsl(0 77% 62% / 0.4);
+    --glow-safe: none;
+    --glow-warning: none;
+    --glow-danger: none;
 
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 0 0% 4%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 157 100% 50%;
     --sidebar-primary-foreground: 0 0% 4.3%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 16%;
+    --sidebar-border: 0 0% 20%;
     --sidebar-ring: 157 100% 50%;
   }
 }
@@ -67,6 +67,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
+    @apply uppercase tracking-wider;
   }
 
   code, .font-mono {
@@ -84,29 +85,8 @@
   outline: none;
 }
 
-/* Glow animations */
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-@keyframes float-up {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-float-up {
-  animation: float-up 0.5s ease-out forwards;
-}
-
-/* Glass effect */
+/* Brutalist glass — solid, no blur, thick border */
 .glass {
-  background: hsl(0 0% 7% / 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid hsl(0 0% 16%);
+  background: hsl(0 0% 5%);
+  border: 2px solid hsl(0 0% 20%);
 }
