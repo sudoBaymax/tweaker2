@@ -82,40 +82,40 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
       className="relative w-full"
       ref={wrapperRef}
     >
-      <div className="glass p-3">
+      <div className="glass p-2">
         {/* From field */}
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-center w-5 flex-shrink-0">
-            <Navigation className="w-4 h-4 text-primary" />
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center w-4 flex-shrink-0">
+            <Navigation className="w-3 h-3 text-primary" />
           </div>
           <input
             type="text"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             placeholder="Starting location"
-            className="bg-transparent outline-none text-sm font-bold text-foreground placeholder:text-muted-foreground flex-1 uppercase tracking-wide"
+            className="bg-transparent outline-none text-xs font-bold text-foreground placeholder:text-muted-foreground flex-1 uppercase tracking-wide"
           />
           <button
             type="button"
-            className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors flex-shrink-0 font-bold uppercase"
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors flex-shrink-0 font-bold uppercase"
           >
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-3 h-3" />
             <span className="hidden sm:inline">GPS</span>
           </button>
         </div>
 
         {/* Connector line */}
-        <div className="flex items-center gap-3 py-1">
-          <div className="flex flex-col items-center w-5 flex-shrink-0">
-            <div className="w-0.5 h-6 bg-border" />
+        <div className="flex items-center gap-2 py-0.5">
+          <div className="flex flex-col items-center w-4 flex-shrink-0">
+            <div className="w-0.5 h-4 bg-border" />
           </div>
           <div className="flex-1 border-t border-border" />
         </div>
 
         {/* To field */}
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-center w-5 flex-shrink-0">
-            <Circle className="w-4 h-4 text-danger" />
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center w-4 flex-shrink-0">
+            <Circle className="w-3 h-3 text-danger" />
           </div>
           <input
             type="text"
@@ -124,14 +124,14 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             onFocus={() => to.trim() && suggestions.length > 0 && setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
             placeholder="DESTINATION"
-            className="bg-transparent outline-none text-sm font-bold text-foreground placeholder:text-muted-foreground flex-1 uppercase tracking-wide"
+            className="bg-transparent outline-none text-xs font-bold text-foreground placeholder:text-muted-foreground flex-1 uppercase tracking-wide"
             autoComplete="off"
           />
           <button
             type="submit"
-            className="flex items-center gap-1 text-sm text-foreground bg-primary text-primary-foreground px-3 py-1.5 font-bold uppercase tracking-wider hover:bg-primary/90"
+            className="flex items-center gap-1 text-xs text-foreground bg-primary text-primary-foreground px-2.5 py-1 font-bold uppercase tracking-wider hover:bg-primary/90"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-3 h-3" />
             GO
           </button>
         </div>

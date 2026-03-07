@@ -22,14 +22,14 @@ const TimelineSlider = ({ value, onChange }: TimelineSliderProps) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="glass px-4 py-3"
+      className="glass px-3 py-1.5"
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3 h-3 text-primary" />
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</span>
         </div>
-        <span className="text-sm font-mono font-bold text-primary uppercase">
+        <span className="text-xs font-mono font-bold text-primary uppercase">
           {value === 0 ? "LIVE" : formatLabel(value)}
         </span>
       </div>
@@ -41,9 +41,9 @@ const TimelineSlider = ({ value, onChange }: TimelineSliderProps) => {
         onValueChange={([v]) => onChange(v)}
         className="w-full"
       />
-      <div className="flex justify-between mt-1">
-        <span className="text-xs text-muted-foreground font-bold uppercase">24H AGO</span>
-        <span className="text-xs text-primary font-bold uppercase">NOW</span>
+      <div className="flex justify-between mt-0.5">
+        <span className="text-[10px] text-muted-foreground font-bold uppercase">24H AGO</span>
+        <span className="text-[10px] text-primary font-bold uppercase">NOW</span>
       </div>
     </motion.div>
   );

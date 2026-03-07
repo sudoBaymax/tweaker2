@@ -14,10 +14,10 @@ const AlertToast = ({ visible, message }: AlertToastProps) => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -20, opacity: 0 }}
-          className="fixed top-16 left-1/2 -translate-x-1/2 z-30 glass px-4 py-3 flex items-center gap-2"
+          className="fixed top-12 left-1/2 -translate-x-1/2 z-30 glass px-3 py-1.5 flex items-center gap-1.5"
         >
-          <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-          <p className="text-sm text-foreground font-bold uppercase tracking-wider">{message}</p>
+          <CheckCircle className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+          <p className="text-xs text-foreground font-bold uppercase tracking-wider">{message}</p>
         </motion.div>
       )}
     </AnimatePresence>
