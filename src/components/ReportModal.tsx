@@ -83,6 +83,26 @@ const ReportModal = ({ open, onClose, onSubmit }: ReportModalProps) => {
               ))}
             </div>
 
+            <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">
+              Intensity level
+            </p>
+            <div className="flex gap-2 mb-4">
+              {intensityLevels.map((level) => (
+                <button
+                  key={level.id}
+                  onClick={() => setIntensity(level.id)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 p-2 border-2 text-xs font-bold transition-colors ${
+                    intensity === level.id
+                      ? "border-foreground text-foreground"
+                      : "border-border text-muted-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  <div className={`w-3 h-3 ${level.color}`} />
+                  {level.label}
+                </button>
+              ))}
+            </div>
+
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
