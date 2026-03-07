@@ -57,7 +57,7 @@ const Index = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background">
-      <MapView incidents={incidents} timeOffset={timeOffset} />
+      <MapView incidents={incidents} timeOffset={timeOffset} onLocationFound={(lat, lng) => console.log("User location:", lat, lng)} />
       <Header />
       <AlertToast visible={toast.visible} message={toast.message} />
 
