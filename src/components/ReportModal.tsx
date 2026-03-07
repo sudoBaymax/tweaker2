@@ -28,8 +28,10 @@ const ReportModal = ({ open, onClose, onSubmit }: ReportModalProps) => {
 
   const handleSubmit = () => {
     if (!selected) return;
-    onSubmit(selected);
+    const level = intensityLevels.find((l) => l.id === intensity);
+    onSubmit(selected, level?.value ?? 0.6);
     setSelected(null);
+    setIntensity("medium");
     setComment("");
     onClose();
   };
