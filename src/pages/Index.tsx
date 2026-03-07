@@ -60,7 +60,8 @@ const Index = () => {
   }, [incidents, timeOffset]);
 
   const handleReport = useCallback((category: string, intensity: number) => {
-    const report = generateUserReport(category, intensity);
+    const [lat, lng] = userLocation.current;
+    const report = generateUserReport(category, intensity, lat, lng);
     setIncidents((prev) => [...prev, report]);
     setToast({ visible: true, message: "REPORT SUBMITTED — HEATMAP UPDATED" });
     setTimeout(() => setToast({ visible: false, message: "" }), 3000);
