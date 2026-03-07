@@ -1,13 +1,30 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Shield, Star, X } from "lucide-react";
+import { RouteResult } from "@/lib/routing";
 
 interface RouteCardProps {
   visible: boolean;
   onClose: () => void;
   onSelectRoute: (type: "fastest" | "safest") => void;
+  fastest?: RouteResult | null;
+  safest?: RouteResult | null;
 }
 
-const RouteCard = ({ visible, onClose, onSelectRoute }: RouteCardProps) => {
+function riskLabel(score: number): string {
+  if (score < 0.15) return "LOW RISK";
+  if (score < 0.35) return "MODERATE RISK";
+  if (score < 0.55) return "ELEVATED RISK";
+  return "HIGH RISK";
+}
+
+function riskColor(score: number): string {
+  if (score < 0.15) return "text-safe";
+  if (score < 0.35) return "text-primary";
+  if (score < 0.55) return "text-warning";
+  return "text-danger";
+}
+
+const RouteCard = ({ visible, onClose, onSelectRoute, fastest, safest }: RouteCardProps) => {
   return (
     <AnimatePresence>
       {visible && (
@@ -34,8 +51,15 @@ const RouteCard = ({ visible, onClose, onSelectRoute }: RouteCardProps) => {
                 <Clock className="w-4 h-4 text-accent" />
                 <span className="text-sm font-bold text-accent uppercase">Fastest</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">8 MIN</p>
-              <p className="text-xs text-muted-foreground mt-1 uppercase">Normal risk</p>
+              <p className="text-2xl font-bold text-foreground">
+                {fastest ? `${fastest.walkMinutes} MIN` : "— MIN"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 uppercase">
+                {fastest ? `${fastest.distanceKm.toFixed(1)} km` : "—"}
+              </p>
+              <p className={`text-xs mt-1 uppercase font-bold ${fastest ? riskColor(fastest.riskScore) : "text-muted-foreground"}`}>
+                {fastest ? riskLabel(fastest.riskScore) : "—"}
+              </p>
             </button>
 
             <button
@@ -47,8 +71,15 @@ const RouteCard = ({ visible, onClose, onSelectRoute }: RouteCardProps) => {
                 <span className="text-sm font-bold text-primary uppercase">Safest</span>
                 <Star className="w-3.5 h-3.5 text-primary fill-primary" />
               </div>
-              <p className="text-2xl font-bold text-foreground">10 MIN</p>
-              <p className="text-xs text-primary/70 mt-1 uppercase">Low risk</p>
+              <p className="text-2xl font-bold text-foreground">
+                {safest ? `${safest.walkMinutes} MIN` : "— MIN"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 uppercase">
+                {safest ? `${safest.distanceKm.toFixed(1)} km` : "—"}
+              </p>
+              <p className={`text-xs mt-1 uppercase font-bold ${safest ? riskColor(safest.riskScore) : "text-muted-foreground"}`}>
+                {safest ? riskLabel(safest.riskScore) : "—"}
+              </p>
             </button>
           </div>
         </motion.div>
