@@ -97,12 +97,12 @@ const Index = () => {
       <AlertToast visible={toast.visible} message={toast.message} />
 
       {/* Demo mode badge */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 z-20">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="glass px-4 py-2 text-xs text-muted-foreground font-mono tracking-widest uppercase"
+          className="glass px-3 py-1 text-[10px] text-muted-foreground font-mono tracking-widest uppercase"
         >
           DEMO MODE — SIMULATED SAFETY SIGNALS
         </motion.div>
