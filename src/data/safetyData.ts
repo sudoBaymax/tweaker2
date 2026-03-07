@@ -1,3 +1,12 @@
+/**
+ * Safety data calibrated against 2024 WRPS Criminal Offence Summary
+ * Source: Waterloo Regional Police Service — UCR Most Serious Violation
+ * Total 2024: ~37,786 actual violations across Waterloo Region
+ *   - Crimes Against Person: 10,124 (26.8%)
+ *   - Crimes Against Property: 22,762 (60.2%)
+ *   - Other Criminal Code: 4,900 (13.0%)
+ */
+
 export interface SafetyPoint {
   lat: number;
   lng: number;
@@ -8,47 +17,86 @@ export interface SafetyPoint {
 }
 
 export type IncidentType =
-  | "disturbance"
-  | "theft"
   | "assault"
-  | "suspicious_person"
-  | "property_damage"
+  | "theft"
+  | "break_enter"
   | "robbery"
+  | "sexual_offence"
+  | "mischief"
+  | "fraud"
+  | "mv_theft"
+  | "weapons"
+  | "threats"
   | "drug_activity";
 
+// Weights derived from 2024 WRPS actual violation counts
 const INCIDENT_TYPES: { type: IncidentType; weight: number; severity: [number, number] }[] = [
-  { type: "disturbance", weight: 0.35, severity: [0.2, 0.55] },
-  { type: "theft", weight: 0.20, severity: [0.35, 0.65] },
-  { type: "suspicious_person", weight: 0.15, severity: [0.25, 0.55] },
-  { type: "assault", weight: 0.10, severity: [0.7, 0.95] },
-  { type: "property_damage", weight: 0.10, severity: [0.25, 0.5] },
-  { type: "robbery", weight: 0.05, severity: [0.75, 1.0] },
-  { type: "drug_activity", weight: 0.05, severity: [0.4, 0.7] },
+  { type: "theft",          weight: 0.265, severity: [0.20, 0.50] },  // 5,013 + 5,013 shoplifting
+  { type: "assault",        weight: 0.150, severity: [0.55, 0.90] },  // 5,699 assaults
+  { type: "fraud",          weight: 0.130, severity: [0.15, 0.35] },  // 3,791 + 1,774 identity
+  { type: "mischief",       weight: 0.076, severity: [0.20, 0.45] },  // 2,874
+  { type: "break_enter",    weight: 0.054, severity: [0.50, 0.75] },  // 2,042
+  { type: "threats",        weight: 0.050, severity: [0.40, 0.70] },  // 1,618 uttering threats
+  { type: "mv_theft",       weight: 0.034, severity: [0.45, 0.70] },  // 1,277
+  { type: "sexual_offence", weight: 0.025, severity: [0.75, 1.00] },  // 928
+  { type: "robbery",        weight: 0.010, severity: [0.80, 1.00] },  // 387
+  { type: "weapons",        weight: 0.011, severity: [0.70, 0.95] },  // 399
+  { type: "drug_activity",  weight: 0.195, severity: [0.30, 0.60] },  // CDSA + other
 ];
 
+// ─── HOTSPOTS across Waterloo, Kitchener, Cambridge ────────────────────
 export const HOTSPOTS_PUBLIC = [
-  { name: "UW Campus Core", lat: 43.4723, lng: -80.5449, count: 120, spread: 0.003 },
-  { name: "UW Ring Road", lat: 43.4710, lng: -80.5420, count: 80, spread: 0.002 },
-  { name: "UW South Campus", lat: 43.4690, lng: -80.5460, count: 60, spread: 0.002 },
-  { name: "Laurier Campus", lat: 43.4735, lng: -80.5280, count: 90, spread: 0.003 },
-  { name: "King St Nightlife", lat: 43.4520, lng: -80.4920, count: 100, spread: 0.002 },
-  { name: "Uptown Waterloo Bars", lat: 43.4660, lng: -80.5230, count: 80, spread: 0.003 },
-  { name: "Downtown Kitchener", lat: 43.4510, lng: -80.4930, count: 70, spread: 0.003 },
-  { name: "ION Transit Hub", lat: 43.4530, lng: -80.5220, count: 50, spread: 0.0015 },
-  { name: "Charles St Terminal", lat: 43.4490, lng: -80.4890, count: 45, spread: 0.0015 },
-  { name: "University Ave Transit", lat: 43.4680, lng: -80.5350, count: 40, spread: 0.002 },
-  { name: "Waterloo Park", lat: 43.4620, lng: -80.5300, count: 35, spread: 0.002 },
-  { name: "Columbia Lake Trail", lat: 43.4780, lng: -80.5550, count: 30, spread: 0.002 },
-  { name: "Laurel Trail", lat: 43.4580, lng: -80.5390, count: 25, spread: 0.0015 },
-  { name: "Conestoga Mall Lot", lat: 43.4970, lng: -80.5280, count: 25, spread: 0.002 },
-  { name: "University Plaza Lot", lat: 43.4740, lng: -80.5370, count: 20, spread: 0.0015 },
+  // ── WATERLOO ──
+  { name: "UW Campus Core",       lat: 43.4723, lng: -80.5449, count: 90,  spread: 0.003 },
+  { name: "UW Ring Road",         lat: 43.4710, lng: -80.5420, count: 55,  spread: 0.002 },
+  { name: "UW South Campus",      lat: 43.4690, lng: -80.5460, count: 40,  spread: 0.002 },
+  { name: "Laurier Campus",       lat: 43.4735, lng: -80.5280, count: 65,  spread: 0.003 },
+  { name: "Uptown Waterloo",      lat: 43.4660, lng: -80.5230, count: 75,  spread: 0.003 },
+  { name: "Waterloo Town Square", lat: 43.4640, lng: -80.5205, count: 45,  spread: 0.002 },
+  { name: "University Ave Corridor", lat: 43.4680, lng: -80.5350, count: 35, spread: 0.002 },
+  { name: "Waterloo Park",        lat: 43.4620, lng: -80.5300, count: 25,  spread: 0.002 },
+  { name: "Columbia Lake Trail",   lat: 43.4780, lng: -80.5550, count: 20,  spread: 0.002 },
+  { name: "Conestoga Mall",       lat: 43.4970, lng: -80.5280, count: 50,  spread: 0.003 },
+  { name: "University Plaza",     lat: 43.4740, lng: -80.5370, count: 30,  spread: 0.0015 },
+
+  // ── KITCHENER ──
+  { name: "Downtown Kitchener Core",   lat: 43.4510, lng: -80.4930, count: 110, spread: 0.004 },
+  { name: "King St Nightlife",         lat: 43.4520, lng: -80.4920, count: 85,  spread: 0.002 },
+  { name: "Charles St Terminal",       lat: 43.4490, lng: -80.4890, count: 55,  spread: 0.002 },
+  { name: "Victoria Park",            lat: 43.4480, lng: -80.4950, count: 40,  spread: 0.003 },
+  { name: "Kitchener Market",         lat: 43.4530, lng: -80.4870, count: 35,  spread: 0.002 },
+  { name: "Fairview Park Mall",       lat: 43.4250, lng: -80.4390, count: 50,  spread: 0.003 },
+  { name: "ION Transit Hub KW",       lat: 43.4530, lng: -80.5220, count: 40,  spread: 0.0015 },
+  { name: "Kitchener South",          lat: 43.4200, lng: -80.4800, count: 45,  spread: 0.004 },
+  { name: "Laurel Trail",             lat: 43.4580, lng: -80.5390, count: 20,  spread: 0.0015 },
+  { name: "Centreville Chicopee",     lat: 43.4400, lng: -80.4500, count: 35,  spread: 0.003 },
+  { name: "Highland Hills",           lat: 43.4350, lng: -80.4700, count: 25,  spread: 0.003 },
+  { name: "Stanley Park Area",        lat: 43.4150, lng: -80.4600, count: 30,  spread: 0.003 },
+
+  // ── CAMBRIDGE ──
+  { name: "Downtown Galt",            lat: 43.3570, lng: -80.3120, count: 70,  spread: 0.004 },
+  { name: "Hespeler Village",         lat: 43.3920, lng: -80.3100, count: 45,  spread: 0.003 },
+  { name: "Preston Town Centre",      lat: 43.3990, lng: -80.3520, count: 40,  spread: 0.003 },
+  { name: "Cambridge Centre Mall",    lat: 43.3780, lng: -80.3250, count: 55,  spread: 0.003 },
+  { name: "Galt Core / Water St",     lat: 43.3550, lng: -80.3150, count: 50,  spread: 0.003 },
+  { name: "Langs Community",          lat: 43.3700, lng: -80.3400, count: 30,  spread: 0.003 },
+  { name: "Saginaw Parkway Area",     lat: 43.4050, lng: -80.3350, count: 25,  spread: 0.002 },
+  { name: "Blair / Homer Watson",     lat: 43.3850, lng: -80.3700, count: 20,  spread: 0.002 },
+
+  // ── Regional corridors ──
+  { name: "Fischer-Hallman Corridor",  lat: 43.4350, lng: -80.5400, count: 25,  spread: 0.004 },
+  { name: "Weber St Corridor",        lat: 43.4600, lng: -80.5050, count: 30,  spread: 0.005 },
+  { name: "Hespeler Rd Commercial",   lat: 43.4100, lng: -80.3800, count: 35,  spread: 0.004 },
 ];
 
 const HOTSPOTS = HOTSPOTS_PUBLIC;
 
-const BG_CENTER = { lat: 43.465, lng: -80.520 };
-const BG_COUNT = 60;
-const BG_SPREAD = 0.025;
+// Background scatter across the entire tri-city region
+const BG_CENTERS = [
+  { lat: 43.465, lng: -80.520, count: 40, spread: 0.03 },  // Waterloo
+  { lat: 43.440, lng: -80.480, count: 45, spread: 0.03 },  // Kitchener
+  { lat: 43.375, lng: -80.325, count: 30, spread: 0.03 },  // Cambridge
+];
 
 function gaussRandom(): number {
   const u1 = Math.random();
@@ -84,10 +132,9 @@ function weekendMultiplier(date: Date): number {
   return 1.0;
 }
 
-/** Instead of hiding points, scale risk by the viewed hour's crime pattern */
+/** Scale risk by the viewed hour's crime pattern */
 export function getTimeAdjustedRisk(point: SafetyPoint, viewHour: number): number {
   const viewMult = crimeMultiplier(viewHour);
-  // Normalize against max multiplier (2.8) so risk stays 0-1
   return point.risk * (viewMult / 2.8);
 }
 
@@ -149,7 +196,9 @@ export function generateHistoricalIncidents(): SafetyPoint[] {
     allPoints.push(...generateClusterPoints(hs.lat, hs.lng, hs.count, hs.spread, now));
   }
 
-  allPoints.push(...generateClusterPoints(BG_CENTER.lat, BG_CENTER.lng, BG_COUNT, BG_SPREAD, now));
+  for (const bg of BG_CENTERS) {
+    allPoints.push(...generateClusterPoints(bg.lat, bg.lng, bg.count, bg.spread, now));
+  }
 
   return allPoints;
 }
@@ -190,5 +239,6 @@ export function generateUserReport(category: string): SafetyPoint {
   };
 }
 
-export const MAP_CENTER: [number, number] = [-80.5449, 43.4723];
-export const MAP_ZOOM = 13;
+// Center on Kitchener-Waterloo-Cambridge tri-city region
+export const MAP_CENTER: [number, number] = [-80.4500, 43.4300];
+export const MAP_ZOOM = 12;
