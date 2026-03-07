@@ -43,7 +43,7 @@ const Index = () => {
     userLocation.current = [lat, lng];
   }, []);
 
-  const handleSearch = useCallback((from: string, to: string) => {
+  const handleSearch = useCallback(async (from: string, to: string) => {
     const dest = resolveDestination(to);
     if (!dest) return;
 
@@ -53,7 +53,7 @@ const Index = () => {
     const startLat = userLocation.current[0];
     const startLng = userLocation.current[1];
 
-    const routes = calculateRoutes(startLat, startLng, dest[0], dest[1], incidents, viewHour);
+    const routes = await calculateRoutes(startLat, startLng, dest[0], dest[1], incidents, viewHour);
     setActiveRoute(routes);
     setSelectedRouteType(null);
     setShowRoutes(true);
