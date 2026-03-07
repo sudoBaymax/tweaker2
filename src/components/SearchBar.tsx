@@ -17,7 +17,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
