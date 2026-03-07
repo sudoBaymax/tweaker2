@@ -97,19 +97,19 @@ const Index = () => {
       <AlertToast visible={toast.visible} message={toast.message} />
 
       {/* Demo mode badge */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 z-20">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="glass px-4 py-2 text-xs text-muted-foreground font-mono tracking-widest uppercase"
+          className="glass px-3 py-1 text-[10px] text-muted-foreground font-mono tracking-widest uppercase"
         >
           DEMO MODE — SIMULATED SAFETY SIGNALS
         </motion.div>
       </div>
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-4 flex flex-col gap-3 max-w-lg mx-auto">
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-3 flex flex-col gap-2 max-w-md mx-auto">
         <div className="flex justify-center">
           <SafetyLegend />
         </div>
@@ -135,9 +135,9 @@ const Index = () => {
           >
             <button
               onClick={() => setReportOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 glass py-3 text-base font-bold text-danger uppercase tracking-wider hover:bg-danger/10 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 glass py-2 text-xs font-bold text-danger uppercase tracking-wider hover:bg-danger/10 transition-colors"
             >
-              <AlertTriangle className="w-5 h-5" />
+              <AlertTriangle className="w-4 h-4" />
               REPORT ISSUE
             </button>
           </motion.div>
@@ -146,7 +146,7 @@ const Index = () => {
         {selectedRouteType && (
           <button
             onClick={handleCloseRoutes}
-            className="glass py-3 text-base font-bold text-foreground uppercase tracking-wider hover:bg-muted transition-colors text-center"
+            className="glass py-2 text-xs font-bold text-foreground uppercase tracking-wider hover:bg-muted transition-colors text-center"
           >
             CANCEL NAVIGATION
           </button>
