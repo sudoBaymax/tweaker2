@@ -165,16 +165,33 @@ export function calculateRoutes(
 
 /** Known destination locations for demo */
 export const KNOWN_DESTINATIONS: Record<string, [number, number]> = {
+  // Waterloo
   "conestoga mall": [43.4970, -80.5280],
   "university plaza": [43.4740, -80.5370],
   "waterloo park": [43.4620, -80.5300],
   "laurier": [43.4735, -80.5280],
-  "downtown kitchener": [43.4510, -80.4930],
   "uptown waterloo": [43.4660, -80.5230],
-  "charles st terminal": [43.4490, -80.4890],
   "columbia lake": [43.4780, -80.5550],
-  "ion station": [43.4530, -80.5220],
   "uw": [43.4723, -80.5449],
+  "waterloo town square": [43.4640, -80.5205],
+  // Kitchener
+  "downtown kitchener": [43.4510, -80.4930],
+  "charles st terminal": [43.4490, -80.4890],
+  "ion station": [43.4530, -80.5220],
+  "victoria park": [43.4480, -80.4950],
+  "kitchener market": [43.4530, -80.4870],
+  "fairview park mall": [43.4250, -80.4390],
+  "fairview mall": [43.4250, -80.4390],
+  "stanley park": [43.4150, -80.4600],
+  // Cambridge
+  "downtown galt": [43.3570, -80.3120],
+  "galt": [43.3570, -80.3120],
+  "hespeler": [43.3920, -80.3100],
+  "preston": [43.3990, -80.3520],
+  "cambridge centre": [43.3780, -80.3250],
+  "cambridge centre mall": [43.3780, -80.3250],
+  "cambridge": [43.3600, -80.3200],
+  "langs": [43.3700, -80.3400],
 };
 
 /** Fuzzy match a destination string to coordinates */
@@ -183,6 +200,6 @@ export function resolveDestination(query: string): [number, number] | null {
   for (const [name, coords] of Object.entries(KNOWN_DESTINATIONS)) {
     if (q.includes(name) || name.includes(q)) return coords;
   }
-  // Fallback: generate a random nearby point
-  return [43.4600 + (Math.random() - 0.5) * 0.03, -80.5200 + (Math.random() - 0.5) * 0.03];
+  // Fallback: random point in tri-city area
+  return [43.4200 + (Math.random() - 0.5) * 0.06, -80.4500 + (Math.random() - 0.5) * 0.08];
 }
