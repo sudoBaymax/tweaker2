@@ -8,6 +8,7 @@ interface MapViewProps {
   onMapReady?: () => void;
   incidents: SafetyPoint[];
   timeOffset: number;
+  onLocationFound?: (lat: number, lng: number) => void;
 }
 
 declare module "leaflet" {
@@ -17,10 +18,11 @@ declare module "leaflet" {
   ): L.Layer;
 }
 
-const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
+const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const heatLayer = useRef<L.Layer | null>(null);
+  const userMarker = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -33,17 +35,38 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
       attributionControl: false,
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    // Lighter tile layer — CartoDB Voyager (light, readable, street labels)
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
     }).addTo(map.current);
 
     const userIcon = L.divIcon({
       className: "",
-      html: `<div style="width:16px;height:16px;background:hsl(157,100%,50%);border-radius:50%;border:3px solid hsla(157,100%,50%,0.3);box-shadow:0 0 20px hsla(157,100%,50%,0.5);"></div>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
+      html: `<div style="width:18px;height:18px;background:hsl(217,100%,55%);border-radius:50%;border:4px solid hsla(217,100%,55%,0.3);box-shadow:0 0 20px hsla(217,100%,55%,0.5);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
     });
-    L.marker([MAP_CENTER[1], MAP_CENTER[0]], { icon: userIcon }).addTo(map.current);
+
+    // Default marker at map center
+    userMarker.current = L.marker([MAP_CENTER[1], MAP_CENTER[0]], { icon: userIcon }).addTo(map.current);
+
+    // Try to get actual geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          if (map.current && userMarker.current) {
+            map.current.setView([latitude, longitude], MAP_ZOOM);
+            userMarker.current.setLatLng([latitude, longitude]);
+            onLocationFound?.(latitude, longitude);
+          }
+        },
+        () => {
+          // Geolocation denied or failed — keep default center
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
 
     setMapReady(true);
     onMapReady?.();
@@ -61,14 +84,12 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
       map.current.removeLayer(heatLayer.current);
     }
 
-    // Calculate the viewed hour from the offset
     const viewDate = new Date(Date.now() + timeOffset * 60 * 60 * 1000);
     const viewHour = viewDate.getHours();
 
     const heatData: Array<[number, number, number]> = [];
 
     for (const p of incidents) {
-      // All points stay visible — intensity shifts with viewed hour
       const intensity = getTimeAdjustedRisk(p, viewHour);
       if (intensity > 0.01) {
         heatData.push([p.lat, p.lng, intensity]);
@@ -80,16 +101,16 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
       blur: 20,
       maxZoom: 17,
       max: 1.0,
-      minOpacity: 0.05,
+      minOpacity: 0.08,
       gradient: {
         0.0: "rgba(0,0,0,0)",
-        0.1: "#00221c",
-        0.25: "#00ff9c",
-        0.45: "#7dff5c",
-        0.6: "#ffe600",
-        0.75: "#ff8c00",
-        0.9: "#ff2a2a",
-        1.0: "#7a0000",
+        0.15: "rgba(0,180,100,0.3)",
+        0.3: "rgba(0,200,80,0.5)",
+        0.45: "rgba(200,220,0,0.6)",
+        0.6: "rgba(255,200,0,0.7)",
+        0.75: "rgba(255,120,0,0.8)",
+        0.9: "rgba(255,40,40,0.85)",
+        1.0: "rgba(180,0,0,0.9)",
       },
     }).addTo(map.current);
   }, [incidents, mapReady, timeOffset]);
