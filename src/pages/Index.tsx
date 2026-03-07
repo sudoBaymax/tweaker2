@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import MapView from "@/components/MapView";
 import SearchBar from "@/components/SearchBar";
@@ -7,7 +7,8 @@ import ReportModal from "@/components/ReportModal";
 import AlertToast from "@/components/AlertToast";
 import SafetyLegend from "@/components/SafetyLegend";
 import TimelineSlider from "@/components/TimelineSlider";
-import { generateHistoricalIncidents, generateLiveIncident, generateUserReport, SafetyPoint } from "@/data/safetyData";
+import { generateHistoricalIncidents, generateLiveIncident, generateUserReport, SafetyPoint, MAP_CENTER } from "@/data/safetyData";
+import { calculateRoutes, resolveDestination, RouteResult } from "@/lib/routing";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 
@@ -17,6 +18,9 @@ const Index = () => {
   const [incidents, setIncidents] = useState<SafetyPoint[]>([]);
   const [toast, setToast] = useState({ visible: false, message: "" });
   const [timeOffset, setTimeOffset] = useState(0);
+  const [activeRoute, setActiveRoute] = useState<{ fastest: RouteResult; safest: RouteResult } | null>(null);
+  const [selectedRouteType, setSelectedRouteType] = useState<"fastest" | "safest" | null>(null);
+  const userLocation = useRef<[number, number]>([MAP_CENTER[1], MAP_CENTER[0]]);
 
   useEffect(() => {
     setIncidents(generateHistoricalIncidents());
@@ -35,9 +39,25 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = useCallback((from: string, to: string) => {
-    setShowRoutes(true);
+  const handleLocationFound = useCallback((lat: number, lng: number) => {
+    userLocation.current = [lat, lng];
   }, []);
+
+  const handleSearch = useCallback((from: string, to: string) => {
+    const dest = resolveDestination(to);
+    if (!dest) return;
+
+    const viewDate = new Date(Date.now() + timeOffset * 60 * 60 * 1000);
+    const viewHour = viewDate.getHours();
+
+    const startLat = userLocation.current[0];
+    const startLng = userLocation.current[1];
+
+    const routes = calculateRoutes(startLat, startLng, dest[0], dest[1], incidents, viewHour);
+    setActiveRoute(routes);
+    setSelectedRouteType(null);
+    setShowRoutes(true);
+  }, [incidents, timeOffset]);
 
   const handleReport = useCallback((category: string) => {
     const report = generateUserReport(category);
@@ -47,17 +67,32 @@ const Index = () => {
   }, []);
 
   const handleSelectRoute = useCallback((type: "fastest" | "safest") => {
+    setSelectedRouteType(type);
+    setShowRoutes(false);
     setToast({
       visible: true,
-      message: type === "safest" ? "NAVIGATING VIA SAFEST ROUTE ✓" : "NAVIGATING VIA FASTEST ROUTE",
+      message: type === "safest"
+        ? `NAVIGATING SAFEST ROUTE — ${activeRoute?.safest.walkMinutes} MIN ✓`
+        : `NAVIGATING FASTEST ROUTE — ${activeRoute?.fastest.walkMinutes} MIN`,
     });
+    setTimeout(() => setToast({ visible: false, message: "" }), 4000);
+  }, [activeRoute]);
+
+  const handleCloseRoutes = useCallback(() => {
     setShowRoutes(false);
-    setTimeout(() => setToast({ visible: false, message: "" }), 3000);
+    setActiveRoute(null);
+    setSelectedRouteType(null);
   }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background">
-      <MapView incidents={incidents} timeOffset={timeOffset} onLocationFound={(lat, lng) => console.log("User location:", lat, lng)} />
+      <MapView
+        incidents={incidents}
+        timeOffset={timeOffset}
+        onLocationFound={handleLocationFound}
+        activeRoute={activeRoute}
+        selectedRouteType={selectedRouteType}
+      />
       <Header />
       <AlertToast visible={toast.visible} message={toast.message} />
 
@@ -85,11 +120,13 @@ const Index = () => {
 
         <RouteCard
           visible={showRoutes}
-          onClose={() => setShowRoutes(false)}
+          onClose={handleCloseRoutes}
           onSelectRoute={handleSelectRoute}
+          fastest={activeRoute?.fastest}
+          safest={activeRoute?.safest}
         />
 
-        {!showRoutes && (
+        {!showRoutes && !selectedRouteType && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -104,6 +141,15 @@ const Index = () => {
               REPORT ISSUE
             </button>
           </motion.div>
+        )}
+
+        {selectedRouteType && (
+          <button
+            onClick={handleCloseRoutes}
+            className="glass py-3 text-base font-bold text-foreground uppercase tracking-wider hover:bg-muted transition-colors text-center"
+          >
+            CANCEL NAVIGATION
+          </button>
         )}
       </div>
 

@@ -26,7 +26,7 @@ const INCIDENT_TYPES: { type: IncidentType; weight: number; severity: [number, n
   { type: "drug_activity", weight: 0.05, severity: [0.4, 0.7] },
 ];
 
-const HOTSPOTS = [
+export const HOTSPOTS_PUBLIC = [
   { name: "UW Campus Core", lat: 43.4723, lng: -80.5449, count: 120, spread: 0.003 },
   { name: "UW Ring Road", lat: 43.4710, lng: -80.5420, count: 80, spread: 0.002 },
   { name: "UW South Campus", lat: 43.4690, lng: -80.5460, count: 60, spread: 0.002 },
@@ -43,6 +43,8 @@ const HOTSPOTS = [
   { name: "Conestoga Mall Lot", lat: 43.4970, lng: -80.5280, count: 25, spread: 0.002 },
   { name: "University Plaza Lot", lat: 43.4740, lng: -80.5370, count: 20, spread: 0.0015 },
 ];
+
+const HOTSPOTS = HOTSPOTS_PUBLIC;
 
 const BG_CENTER = { lat: 43.465, lng: -80.520 };
 const BG_COUNT = 60;

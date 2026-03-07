@@ -3,12 +3,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 import { MAP_CENTER, MAP_ZOOM, SafetyPoint, getTimeAdjustedRisk } from "@/data/safetyData";
+import { RouteResult } from "@/lib/routing";
 
 interface MapViewProps {
   onMapReady?: () => void;
   incidents: SafetyPoint[];
   timeOffset: number;
   onLocationFound?: (lat: number, lng: number) => void;
+  activeRoute?: { fastest: RouteResult; safest: RouteResult } | null;
+  selectedRouteType?: "fastest" | "safest" | null;
 }
 
 declare module "leaflet" {
@@ -18,11 +21,12 @@ declare module "leaflet" {
   ): L.Layer;
 }
 
-const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapViewProps) => {
+const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound, activeRoute, selectedRouteType }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const heatLayer = useRef<L.Layer | null>(null);
   const userMarker = useRef<L.Marker | null>(null);
+  const routeLayers = useRef<L.Polyline[]>([]);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -35,7 +39,6 @@ const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapView
       attributionControl: false,
     });
 
-    // Lighter tile layer — CartoDB Voyager (light, readable, street labels)
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
     }).addTo(map.current);
@@ -47,10 +50,8 @@ const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapView
       iconAnchor: [9, 9],
     });
 
-    // Default marker at map center
     userMarker.current = L.marker([MAP_CENTER[1], MAP_CENTER[0]], { icon: userIcon }).addTo(map.current);
 
-    // Try to get actual geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -61,9 +62,7 @@ const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapView
             onLocationFound?.(latitude, longitude);
           }
         },
-        () => {
-          // Geolocation denied or failed — keep default center
-        },
+        () => {},
         { enableHighAccuracy: true, timeout: 8000 }
       );
     }
@@ -77,6 +76,74 @@ const MapView = ({ onMapReady, incidents, timeOffset, onLocationFound }: MapView
     };
   }, []);
 
+  // Draw route polylines
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+
+    // Clear old routes
+    for (const layer of routeLayers.current) {
+      map.current.removeLayer(layer);
+    }
+    routeLayers.current = [];
+
+    if (!activeRoute) return;
+
+    // If a route is selected, only show that one. Otherwise show both.
+    if (selectedRouteType) {
+      const route = selectedRouteType === "safest" ? activeRoute.safest : activeRoute.fastest;
+      const color = selectedRouteType === "safest" ? "hsl(157,100%,50%)" : "hsl(50,100%,50%)";
+      const polyline = L.polyline(
+        route.waypoints.map(([lat, lng]) => [lat, lng] as L.LatLngExpression),
+        { color, weight: 5, opacity: 0.9, dashArray: undefined }
+      ).addTo(map.current);
+      routeLayers.current.push(polyline);
+
+      // Add destination marker
+      const destPoint = route.waypoints[route.waypoints.length - 1];
+      const destIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:14px;height:14px;background:hsl(0,77%,62%);border:3px solid hsl(0,0%,100%);border-radius:0;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const destMarker = L.marker(destPoint as L.LatLngExpression, { icon: destIcon }).addTo(map.current);
+      routeLayers.current.push(destMarker as any);
+
+      // Fit bounds
+      map.current.fitBounds(polyline.getBounds(), { padding: [60, 60] });
+    } else {
+      // Show both routes as preview
+      const fastPolyline = L.polyline(
+        activeRoute.fastest.waypoints.map(([lat, lng]) => [lat, lng] as L.LatLngExpression),
+        { color: "hsl(50,100%,50%)", weight: 4, opacity: 0.6, dashArray: "8 6" }
+      ).addTo(map.current);
+      routeLayers.current.push(fastPolyline);
+
+      const safePolyline = L.polyline(
+        activeRoute.safest.waypoints.map(([lat, lng]) => [lat, lng] as L.LatLngExpression),
+        { color: "hsl(157,100%,50%)", weight: 5, opacity: 0.8 }
+      ).addTo(map.current);
+      routeLayers.current.push(safePolyline);
+
+      // Destination marker
+      const destPoint = activeRoute.safest.waypoints[activeRoute.safest.waypoints.length - 1];
+      const destIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:14px;height:14px;background:hsl(0,77%,62%);border:3px solid hsl(0,0%,100%);border-radius:0;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const destMarker = L.marker(destPoint as L.LatLngExpression, { icon: destIcon }).addTo(map.current);
+      routeLayers.current.push(destMarker as any);
+
+      // Fit bounds to show both
+      const allPoints = [...activeRoute.fastest.waypoints, ...activeRoute.safest.waypoints];
+      const bounds = L.latLngBounds(allPoints.map(([lat, lng]) => [lat, lng] as L.LatLngExpression));
+      map.current.fitBounds(bounds, { padding: [60, 60] });
+    }
+  }, [activeRoute, selectedRouteType, mapReady]);
+
+  // Heatmap
   useEffect(() => {
     if (!map.current || !mapReady) return;
 
