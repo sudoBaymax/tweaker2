@@ -1,37 +1,28 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
-import type { User } from "@supabase/supabase-js";
+import { useAuth0 } from "@auth0/auth0-react";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { user, isLoading, loginWithRedirect, logout } = useAuth0();
 
   const signInWithGoogle = async () => {
-    await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    await loginWithRedirect({
+      authorizationParams: {
+        connection: "google-oauth2",
+      },
     });
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
   };
 
-  return { user, loading, signInWithGoogle, signOut };
+  return {
+    user: user ?? null,
+    loading: isLoading,
+    signInWithGoogle,
+    signOut,
+  };
 }
