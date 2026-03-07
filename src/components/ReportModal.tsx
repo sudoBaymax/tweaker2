@@ -23,6 +23,7 @@ const categories = [
 
 const ReportModal = ({ open, onClose, onSubmit }: ReportModalProps) => {
   const [selected, setSelected] = useState<string | null>(null);
+  const [intensity, setIntensity] = useState<string>("medium");
   const [comment, setComment] = useState("");
 
   const handleSubmit = () => {
