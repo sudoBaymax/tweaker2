@@ -5,8 +5,14 @@ import { X, AlertTriangle, Lightbulb, ShieldOff, UserX, Send } from "lucide-reac
 interface ReportModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (category: string) => void;
+  onSubmit: (category: string, intensity: number) => void;
 }
+
+const intensityLevels = [
+  { id: "low", label: "LOW", color: "bg-safe", value: 0.3 },
+  { id: "medium", label: "MED", color: "bg-warning", value: 0.6 },
+  { id: "high", label: "HIGH", color: "bg-danger", value: 1.0 },
+];
 
 const categories = [
   { id: "suspicious_activity", label: "SUSPICIOUS ACTIVITY", icon: AlertTriangle, emoji: "⚠️" },
