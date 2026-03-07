@@ -229,11 +229,11 @@ export function generateLiveIncident(): SafetyPoint {
   };
 }
 
-export function generateUserReport(category: string): SafetyPoint {
+export function generateUserReport(category: string, intensity: number = 0.85): SafetyPoint {
   return {
     lat: 43.4723 + gaussRandom() * 0.008,
     lng: -80.5449 + gaussRandom() * 0.008,
-    risk: 0.85 + Math.random() * 0.15,
+    risk: Math.min(1, intensity + Math.random() * 0.1),
     category,
     timestamp: Date.now(),
   };

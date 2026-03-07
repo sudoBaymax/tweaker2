@@ -59,8 +59,8 @@ const Index = () => {
     setShowRoutes(true);
   }, [incidents, timeOffset]);
 
-  const handleReport = useCallback((category: string) => {
-    const report = generateUserReport(category);
+  const handleReport = useCallback((category: string, intensity: number) => {
+    const report = generateUserReport(category, intensity);
     setIncidents((prev) => [...prev, report]);
     setToast({ visible: true, message: "REPORT SUBMITTED — HEATMAP UPDATED" });
     setTimeout(() => setToast({ visible: false, message: "" }), 3000);
