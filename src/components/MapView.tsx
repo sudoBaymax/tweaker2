@@ -75,8 +75,8 @@ const MapView = ({ onMapReady, incidents, timeOffset }: MapViewProps) => {
     }
 
     heatLayer.current = (L as any).heatLayer(heatData, {
-      radius: 40,
-      blur: 32,
+      radius: 28,
+      blur: 20,
       maxZoom: 17,
       max: 1.0,
       minOpacity: 0.05,

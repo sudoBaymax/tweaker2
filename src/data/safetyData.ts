@@ -27,26 +27,26 @@ const INCIDENT_TYPES: { type: IncidentType; weight: number; severity: [number, n
 ];
 
 const HOTSPOTS = [
-  { name: "UW Campus Core", lat: 43.4723, lng: -80.5449, count: 400, spread: 0.006 },
-  { name: "UW Ring Road", lat: 43.4710, lng: -80.5420, count: 250, spread: 0.005 },
-  { name: "UW South Campus", lat: 43.4690, lng: -80.5460, count: 200, spread: 0.004 },
-  { name: "Laurier Campus", lat: 43.4735, lng: -80.5280, count: 350, spread: 0.005 },
-  { name: "King St Nightlife", lat: 43.4520, lng: -80.4920, count: 300, spread: 0.004 },
-  { name: "Uptown Waterloo Bars", lat: 43.4660, lng: -80.5230, count: 280, spread: 0.005 },
-  { name: "Downtown Kitchener", lat: 43.4510, lng: -80.4930, count: 220, spread: 0.006 },
-  { name: "ION Transit Hub", lat: 43.4530, lng: -80.5220, count: 180, spread: 0.003 },
-  { name: "Charles St Terminal", lat: 43.4490, lng: -80.4890, count: 170, spread: 0.003 },
-  { name: "University Ave Transit", lat: 43.4680, lng: -80.5350, count: 150, spread: 0.004 },
-  { name: "Waterloo Park", lat: 43.4620, lng: -80.5300, count: 120, spread: 0.004 },
-  { name: "Columbia Lake Trail", lat: 43.4780, lng: -80.5550, count: 100, spread: 0.005 },
-  { name: "Laurel Trail", lat: 43.4580, lng: -80.5390, count: 80, spread: 0.003 },
-  { name: "Conestoga Mall Lot", lat: 43.4970, lng: -80.5280, count: 90, spread: 0.004 },
-  { name: "University Plaza Lot", lat: 43.4740, lng: -80.5370, count: 80, spread: 0.003 },
+  { name: "UW Campus Core", lat: 43.4723, lng: -80.5449, count: 120, spread: 0.003 },
+  { name: "UW Ring Road", lat: 43.4710, lng: -80.5420, count: 80, spread: 0.002 },
+  { name: "UW South Campus", lat: 43.4690, lng: -80.5460, count: 60, spread: 0.002 },
+  { name: "Laurier Campus", lat: 43.4735, lng: -80.5280, count: 90, spread: 0.003 },
+  { name: "King St Nightlife", lat: 43.4520, lng: -80.4920, count: 100, spread: 0.002 },
+  { name: "Uptown Waterloo Bars", lat: 43.4660, lng: -80.5230, count: 80, spread: 0.003 },
+  { name: "Downtown Kitchener", lat: 43.4510, lng: -80.4930, count: 70, spread: 0.003 },
+  { name: "ION Transit Hub", lat: 43.4530, lng: -80.5220, count: 50, spread: 0.0015 },
+  { name: "Charles St Terminal", lat: 43.4490, lng: -80.4890, count: 45, spread: 0.0015 },
+  { name: "University Ave Transit", lat: 43.4680, lng: -80.5350, count: 40, spread: 0.002 },
+  { name: "Waterloo Park", lat: 43.4620, lng: -80.5300, count: 35, spread: 0.002 },
+  { name: "Columbia Lake Trail", lat: 43.4780, lng: -80.5550, count: 30, spread: 0.002 },
+  { name: "Laurel Trail", lat: 43.4580, lng: -80.5390, count: 25, spread: 0.0015 },
+  { name: "Conestoga Mall Lot", lat: 43.4970, lng: -80.5280, count: 25, spread: 0.002 },
+  { name: "University Plaza Lot", lat: 43.4740, lng: -80.5370, count: 20, spread: 0.0015 },
 ];
 
 // Background noise spread across the whole area
 const BG_CENTER = { lat: 43.465, lng: -80.520 };
-const BG_COUNT = 200;
+const BG_COUNT = 60;
 const BG_SPREAD = 0.025;
 
 function gaussRandom(): number {
