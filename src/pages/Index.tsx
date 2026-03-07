@@ -23,13 +23,13 @@ const Index = () => {
     setIncidents(generateHistoricalIncidents());
   }, []);
 
-  // Live: add new incidents & prune old ones every 7 seconds
+  // Live: add new incidents & prune old ones every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setIncidents((prev) => {
         const now = Date.now();
         const cutoff = now - 24 * 60 * 60 * 1000;
-        // Add 1-2 new incidents
+        // Add 2-4 new incidents
         const newCount = Math.random() < 0.4 ? 2 : 1;
         const newIncidents = Array.from({ length: newCount }, () => generateLiveIncident());
         // Prune old
