@@ -37,9 +37,9 @@ const Header = () => {
             className="flex items-center gap-2"
           >
             <Avatar className="h-7 w-7 border border-primary/40">
-              <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name} />
+              <AvatarImage src={user.picture} alt={user.name} />
               <AvatarFallback className="bg-primary/20 text-primary text-[10px] font-bold">
-                {(user.user_metadata?.full_name || user.email || "U").charAt(0).toUpperCase()}
+                {(user.name || user.email || "U").charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <button
