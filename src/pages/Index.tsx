@@ -12,6 +12,7 @@ import { calculateRoutes, resolveDestination, RouteResult } from "@/lib/routing"
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import EmergencyPanel from "@/components/EmergencyPanel";
+import TorontoMansChat from "@/components/TorontoMansChat";
 
 const Index = () => {
   const [showRoutes, setShowRoutes] = useState(false);
