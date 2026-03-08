@@ -1,143 +1,88 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { MessageCircle, X, Mic, MicOff, Loader2, Phone, PhoneOff } from "lucide-react";
+import { useConversation } from "@elevenlabs/react";
+import { supabase } from "@/integrations/supabase/client";
 
-
-type Msg = { role: "user" | "assistant"; content: string };
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toronto-mans-chat`;
-const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toronto-mans-tts`;
-
-async function streamChat({
-  messages,
-  onDelta,
-  onDone,
-}: {
-  messages: Msg[];
-  onDelta: (d: string) => void;
-  onDone: () => void;
-}) {
-  const resp = await fetch(CHAT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({ messages }),
-  });
-
-  if (!resp.ok || !resp.body) throw new Error("Stream failed");
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  let done = false;
-
-  while (!done) {
-    const { done: rDone, value } = await reader.read();
-    if (rDone) break;
-    buf += decoder.decode(value, { stream: true });
-
-    let idx: number;
-    while ((idx = buf.indexOf("\n")) !== -1) {
-      let line = buf.slice(0, idx);
-      buf = buf.slice(idx + 1);
-      if (line.endsWith("\r")) line = line.slice(0, -1);
-      if (!line.startsWith("data: ")) continue;
-      const json = line.slice(6).trim();
-      if (json === "[DONE]") { done = true; break; }
-      try {
-        const parsed = JSON.parse(json);
-        const c = parsed.choices?.[0]?.delta?.content;
-        if (c) onDelta(c);
-      } catch {
-        buf = line + "\n" + buf;
-        break;
-      }
-    }
-  }
-  onDone();
-}
+type TranscriptEntry = {
+  role: "user" | "agent";
+  text: string;
+};
 
 export default function TorontoMansChat() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [ttsPlaying, setTtsPlaying] = useState<number | null>(null);
-  const [ttsLoading, setTtsLoading] = useState<number | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log("Connected to Toronto Mans agent");
+      setError(null);
+    },
+    onDisconnect: () => {
+      console.log("Disconnected from Toronto Mans agent");
+    },
+    onMessage: (message) => {
+      if (message.type === "user_transcript") {
+        const transcript = (message as any).user_transcription_event?.user_transcript;
+        if (transcript) {
+          setTranscripts((prev) => [...prev, { role: "user", text: transcript }]);
+        }
+      } else if (message.type === "agent_response") {
+        const response = (message as any).agent_response_event?.agent_response;
+        if (response) {
+          setTranscripts((prev) => [...prev, { role: "agent", text: response }]);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Conversation error:", error);
+      setError("Connection error — try again fam");
+    },
+  });
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [transcripts]);
 
-  const send = useCallback(async () => {
-    if (!input.trim() || loading) return;
-    const userMsg: Msg = { role: "user", content: input.trim() };
-    setInput("");
-    setMessages((p) => [...p, userMsg]);
-    setLoading(true);
-
-    let assistantSoFar = "";
-    const upsert = (chunk: string) => {
-      assistantSoFar += chunk;
-      setMessages((p) => {
-        const last = p[p.length - 1];
-        if (last?.role === "assistant") {
-          return p.map((m, i) => (i === p.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...p, { role: "assistant", content: assistantSoFar }];
-      });
-    };
-
+  const startConversation = useCallback(async () => {
+    setIsConnecting(true);
+    setError(null);
     try {
-      await streamChat({
-        messages: [...messages, userMsg],
-        onDelta: upsert,
-        onDone: () => setLoading(false),
-      });
-    } catch {
-      setLoading(false);
-      upsert("Yo fam something went wrong still, try again eh 😅");
-    }
-  }, [input, loading, messages]);
+      await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  const playTTS = useCallback(async (text: string, idx: number) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (ttsPlaying === idx) {
-      setTtsPlaying(null);
-      return;
-    }
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "elevenlabs-conversation-token"
+      );
 
-    setTtsLoading(idx);
-    try {
-      const resp = await fetch(TTS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ text: text.slice(0, 500) }),
+      if (fnError || !data?.token) {
+        throw new Error(fnError?.message || "No token received");
+      }
+
+      await conversation.startSession({
+        conversationToken: data.token,
+        connectionType: "webrtc",
       });
-      if (!resp.ok) throw new Error("TTS failed");
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      setTtsPlaying(idx);
-      setTtsLoading(null);
-      audio.onended = () => { setTtsPlaying(null); audioRef.current = null; };
-      await audio.play();
-    } catch {
-      setTtsLoading(null);
-      setTtsPlaying(null);
+    } catch (err) {
+      console.error("Failed to start conversation:", err);
+      setError(
+        err instanceof Error && err.message.includes("Permission")
+          ? "Mic access needed fam — enable it in your browser"
+          : "Couldn't connect still, try again eh"
+      );
+    } finally {
+      setIsConnecting(false);
     }
-  }, [ttsPlaying]);
+  }, [conversation]);
+
+  const stopConversation = useCallback(async () => {
+    await conversation.endSession();
+  }, [conversation]);
+
+  const isConnected = conversation.status === "connected";
+  const isSpeaking = conversation.isSpeaking;
 
   return (
     <>
@@ -170,81 +115,104 @@ export default function TorontoMansChat() {
             <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
               <div>
                 <p className="font-bold text-sm tracking-wide">TORONTO MANS 🇨🇦</p>
-                <p className="text-[10px] opacity-80 font-mono">say less fam, I got you</p>
+                <p className="text-[10px] opacity-80 font-mono">
+                  {isConnected
+                    ? isSpeaking
+                      ? "speaking..."
+                      : "listening..."
+                    : "tap to link up fam"}
+                </p>
               </div>
-              <button onClick={() => setOpen(false)} className="hover:bg-primary-foreground/20 rounded-full p-1 transition-colors">
+              <button
+                onClick={() => {
+                  if (isConnected) stopConversation();
+                  setOpen(false);
+                }}
+                className="hover:bg-primary-foreground/20 rounded-full p-1 transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Messages */}
+            {/* Transcripts */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
-              {messages.length === 0 && (
+              {transcripts.length === 0 && !isConnected && (
                 <div className="text-center text-muted-foreground text-xs mt-8 space-y-2">
                   <p className="text-2xl">🍁</p>
                   <p className="font-bold">Yo what's good fam!</p>
-                  <p>Ask me anything eh, I'll put you on game Toronto style styll</p>
+                  <p>Hit that call button and talk to the mandem styll</p>
                 </div>
               )}
-              {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
-                    m.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-muted text-foreground rounded-bl-md"
-                  }`}>
-                    {m.role === "assistant" ? (
-                      <div className="space-y-1">
-                        <div className="prose prose-xs prose-invert max-w-none [&_p]:m-0">
-                          {m.content}
-                        </div>
-                        <button
-                          onClick={() => playTTS(m.content, i)}
-                          className="mt-1 flex items-center gap-1 text-[10px] opacity-60 hover:opacity-100 transition-opacity"
-                          disabled={ttsLoading === i}
-                        >
-                          {ttsLoading === i ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : ttsPlaying === i ? (
-                            <VolumeX className="w-3 h-3" />
-                          ) : (
-                            <Volume2 className="w-3 h-3" />
-                          )}
-                          {ttsPlaying === i ? "stop" : "hear it"}
-                        </button>
-                      </div>
-                    ) : m.content}
+
+              {transcripts.length === 0 && isConnected && (
+                <div className="text-center text-muted-foreground text-xs mt-8 space-y-2">
+                  <p className="text-2xl">🎤</p>
+                  <p className="font-bold">We're linked up!</p>
+                  <p>Go ahead and say something fam</p>
+                </div>
+              )}
+
+              {transcripts.map((t, i) => (
+                <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+                      t.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "bg-muted text-foreground rounded-bl-md"
+                    }`}
+                  >
+                    {t.text}
                   </div>
                 </div>
               ))}
-              {loading && (
+
+              {isConnected && isSpeaking && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-xs">
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2">
+                    <div className="flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-border">
-              <div className="flex gap-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder="Talk to the mandem..."
-                  className="flex-1 bg-muted rounded-full px-3 py-2 text-xs outline-none placeholder:text-muted-foreground"
-                  disabled={loading}
-                />
+            {/* Controls */}
+            <div className="p-4 border-t border-border flex flex-col items-center gap-2">
+              {error && (
+                <p className="text-[10px] text-destructive text-center">{error}</p>
+              )}
+
+              {!isConnected ? (
                 <button
-                  onClick={send}
-                  disabled={loading || !input.trim()}
-                  className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  onClick={startConversation}
+                  disabled={isConnecting}
+                  className="w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700 transition-colors disabled:opacity-50 shadow-lg"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  {isConnecting ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <Phone className="w-6 h-6" />
+                  )}
                 </button>
-              </div>
+              ) : (
+                <button
+                  onClick={stopConversation}
+                  className="w-14 h-14 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-colors shadow-lg animate-pulse"
+                >
+                  <PhoneOff className="w-6 h-6" />
+                </button>
+              )}
+
+              <p className="text-[10px] text-muted-foreground">
+                {isConnecting
+                  ? "linking up..."
+                  : isConnected
+                  ? "tap to end call"
+                  : "tap to call the mandem"}
+              </p>
             </div>
           </motion.div>
         )}
