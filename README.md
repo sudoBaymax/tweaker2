@@ -1,73 +1,149 @@
-# Welcome to your Lovable project
+Tweaker-Tea ☕🗺️
+Safety-First Navigation for Pedestrians
 
-## Project info
+Tweaker-Tea is a safety-focused navigation tool that helps pedestrians avoid potentially dangerous areas when walking through cities at night.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+By combining publicly available crime data with crowdsourced reports, the app generates a real-time safety heatmap and suggests routes that prioritize safety instead of just speed.
 
-## How can I edit this code?
+Google Maps finds the fastest route.
+Tweaker-Tea finds the safest one.
 
-There are several ways of editing your application.
+Inspiration
 
-**Use Lovable**
+Walking home late at night can feel unpredictable, especially in busy downtown areas. Many people rely on instinct when deciding which streets or alleys to avoid.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+While cities publish crime statistics and safety reports, this information usually isn’t integrated into the tools people use to navigate.
 
-Changes made via Lovable will be committed automatically to this repo.
+We wanted to explore:
 
-**Use your preferred IDE**
+What if pedestrians could see a safety heatmap of the city before choosing how to walk home?
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This led to the creation of Tweaker-Tea.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+What It Does
 
-Follow these steps:
+Tweaker-Tea helps users navigate cities more safely by visualizing crime data and recommending safer walking routes.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Key Features
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+• Crime Heatmap
+Visualizes areas with higher concentrations of reported incidents.
 
-# Step 3: Install the necessary dependencies.
-npm i
+• Safe Route Navigation
+Suggests routes that avoid high-risk zones when possible.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+• Crowdsourced Safety Reports
+Users can report unsafe situations to improve the heatmap.
 
-**Edit a file directly in GitHub**
+• Emergency Safety Tools
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Panic button
 
-**Use GitHub Codespaces**
+Live location sharing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Loud alarm + flash feature
 
-## What technologies are used for this project?
+How It Works
 
-This project is built with:
+The system generates a safety score for each location based on incident density and user reports.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Public crime data is collected from open police datasets.
 
-## How can I deploy this project?
+Data is converted into geographic coordinates.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Incident density is used to generate a heatmap.
 
-## Can I connect a custom domain to my Lovable project?
+Routes are calculated while minimizing exposure to high-risk areas.
 
-Yes, you can!
+Tech Stack
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Frontend
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+React
+
+Map visualization (Leaflet / Google Maps API)
+
+Backend
+
+Node.js
+
+Express
+
+Data
+
+Open crime datasets
+
+User-submitted safety reports
+
+Visualization
+
+Heatmap overlays
+
+Geographic routing algorithms
+
+Challenges
+
+• Processing and cleaning real-world crime data
+• Converting incident reports into usable geographic information
+• Balancing route safety with realistic travel times
+• Designing a simple interface for safety visualization
+
+Accomplishments
+
+Within the hackathon timeframe we built a working prototype that:
+
+✔ Visualizes crime data as a city-wide heatmap
+✔ Demonstrates safer route planning
+✔ Integrates emergency safety tools
+
+What We Learned
+
+• How to process and visualize open data
+• The importance of responsible safety data interpretation
+• How geographic data can influence real-world decision making
+
+Future Improvements
+
+Potential future features include:
+
+• Real-time incident prediction using machine learning
+• More city datasets across Canada
+• Nighttime risk analysis based on time and lighting
+• Integration with campus safety systems
+• Verified user reporting
+
+Business Model
+
+Tweaker-Tea could use a freemium model:
+
+Free
+
+Basic safety heatmap
+
+Safe routing
+
+Premium
+
+Real-time alerts
+
+Family location sharing
+
+Advanced safety analytics
+
+Long-term partnerships could include universities, cities, and transit systems.
+
+Demo
+
+Coming soon.
+
+Contributors
+
+Built during a hackathon by:
+
+Joseph Jatou
+
+[Team Member Names]
+
+License
+
+MIT License
