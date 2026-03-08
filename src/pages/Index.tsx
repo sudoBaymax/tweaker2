@@ -11,6 +11,7 @@ import { generateHistoricalIncidents, generateLiveIncident, generateUserReport, 
 import { calculateRoutes, resolveDestination, RouteResult } from "@/lib/routing";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
+import EmergencyPanel from "@/components/EmergencyPanel";
 
 const Index = () => {
   const [showRoutes, setShowRoutes] = useState(false);
