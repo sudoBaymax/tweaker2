@@ -24,14 +24,14 @@ export default function TorontoMansChat() {
     onDisconnect: () => {
       console.log("Disconnected from Toronto Mans agent");
     },
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       if (message.type === "user_transcript") {
-        const transcript = (message as any).user_transcription_event?.user_transcript;
+        const transcript = message.user_transcription_event?.user_transcript;
         if (transcript) {
           setTranscripts((prev) => [...prev, { role: "user", text: transcript }]);
         }
       } else if (message.type === "agent_response") {
-        const response = (message as any).agent_response_event?.agent_response;
+        const response = message.agent_response_event?.agent_response;
         if (response) {
           setTranscripts((prev) => [...prev, { role: "agent", text: response }]);
         }
