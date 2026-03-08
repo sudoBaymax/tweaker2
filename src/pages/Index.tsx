@@ -97,6 +97,7 @@ const Index = () => {
       />
       <Header />
       <AlertToast visible={toast.visible} message={toast.message} />
+      <EmergencyPanel />
 
       {/* Demo mode badge */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 z-20">
